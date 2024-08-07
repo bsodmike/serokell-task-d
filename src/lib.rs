@@ -13,6 +13,7 @@ mod tests;
 
 pub(crate) mod util {
     pub static YELLOW: (i32, i32, i32) = (250, 189, 47);
+    #[allow(dead_code)]
     pub static GREEN: (i32, i32, i32) = (184, 187, 38);
 
     pub fn colored(color: (i32, i32, i32), text: &str) -> String {

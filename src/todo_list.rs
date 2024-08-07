@@ -2,7 +2,7 @@ use std::{fmt, ops::Add};
 
 use crate::*;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Hash, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Index(u64);
 
 impl Index {
@@ -39,6 +39,10 @@ impl Description {
 
     pub fn value(&self) -> &str {
         &self.0
+    }
+
+    pub fn to_string(self) -> String {
+        self.0
     }
 }
 
@@ -110,7 +114,7 @@ impl TodoList {
         }
     }
 
-    pub fn push(&mut self, description: Description, tags: Vec<Tag>) -> TodoItem {
+    pub fn push(&mut self, description: Description, tags: Vec<Tag>) -> (TodoItem, Index) {
         let new_index = self.top_index + Index::new(1);
 
         let item = TodoItem::new(self.top_index, description, tags, false);
@@ -122,7 +126,7 @@ impl TodoList {
         // NOTE: Cloning
         items.push(item.clone());
 
-        item
+        (item, new_index)
     }
 
     pub fn done_with_index(&mut self, idx: Index) -> Option<Index> {

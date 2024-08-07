@@ -2,4 +2,5 @@
 add "buy bread" #groceries
 add "buy milk" #groceries
 add "call parents" #relatives
-search #groceries
+search buy
+search a

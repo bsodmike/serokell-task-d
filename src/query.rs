@@ -38,11 +38,16 @@ impl fmt::Display for QueryResult {
             QueryResult::Found(rs) => {
                 let mut buff: Vec<String> = vec![];
                 buff.push(format!("{} item(s) found", rs.len()));
-                // Show item debug info in output if Debug output is enabled
-                if crate::ENABLE_DEBUG {
-                    for i in rs {
-                        buff.push(format!("{:?}", i));
-                    }
+
+                // FIXME
+                for i in rs {
+                    let tags: String = i
+                        .tags
+                        .iter()
+                        .map(|el| format!("#{}", el))
+                        .collect::<Vec<String>>()
+                        .join(" ");
+                    buff.push(format!("{} \"{}\" {}", i.index, i.description, tags));
                 }
                 write!(f, "{}", buff.join("\n"))
             }
