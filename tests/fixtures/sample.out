@@ -1,27 +1,17 @@
 0
 1
 2
-
-# search #groceries
 2 item(s) found
 1 "buy milk" #groceries
 0 "buy bread" #groceries
-
-# search buy
 2 item(s) found
 1 "buy milk" #groceries
 0 "buy bread" #groceries
-
-# search a
 2 item(s) found
 2 "call parents" #relatives
 0 "buy bread" #groceries
-
-# done 0
 done
 1 item(s) found
 2 "call parents" #relatives
-
-# done 2
 done
 0 item(s) found

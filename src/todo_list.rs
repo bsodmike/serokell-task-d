@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{fmt, ops::Add};
 
 use crate::*;
 
@@ -12,6 +12,14 @@ impl Index {
 
     pub fn value(&self) -> u64 {
         self.0
+    }
+}
+
+impl Add for Index {
+    type Output = Self;
+
+    fn add(self, other: Self) -> Self {
+        Self::new(self.value() + other.value())
     }
 }
 
@@ -103,7 +111,18 @@ impl TodoList {
     }
 
     pub fn push(&mut self, description: Description, tags: Vec<Tag>) -> TodoItem {
-        unimplemented!();
+        let new_index = self.top_index + Index::new(1);
+
+        let item = TodoItem::new(self.top_index, description, tags, false);
+        let items = &mut self.items;
+
+        // Update top_index
+        self.top_index = new_index;
+
+        // NOTE: Cloning
+        items.push(item.clone());
+
+        item
     }
 
     pub fn done_with_index(&mut self, idx: Index) -> Option<Index> {

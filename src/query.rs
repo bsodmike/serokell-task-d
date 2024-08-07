@@ -4,15 +4,15 @@ use crate::*;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Query {
-    Add (Description, Vec<Tag>),
-    Done (Index),
-    Search (SearchParams),
+    Add(Description, Vec<Tag>),
+    Done(Index),
+    Search(SearchParams),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SearchParams {
-    pub words : Vec<SearchWord>,
-    pub tags  : Vec<Tag>,
+    pub words: Vec<SearchWord>,
+    pub tags: Vec<Tag>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -25,9 +25,9 @@ impl SearchWord {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum QueryResult {
-    Added (TodoItem),
+    Added(TodoItem),
     Done,
-    Found (Vec<todo_list::TodoItem>),
+    Found(Vec<todo_list::TodoItem>),
 }
 
 impl fmt::Display for QueryResult {
@@ -36,10 +36,13 @@ impl fmt::Display for QueryResult {
             QueryResult::Added(ti) => write!(f, "{}", ti.index),
             QueryResult::Done => write!(f, "done"),
             QueryResult::Found(rs) => {
-                let mut buff : Vec<String> = vec![];
+                let mut buff: Vec<String> = vec![];
                 buff.push(format!("{} item(s) found", rs.len()));
-                for i in rs {
-                    buff.push(format!("{:?}", i));
+                // Show item debug info in output if Debug output is enabled
+                if crate::ENABLE_DEBUG {
+                    for i in rs {
+                        buff.push(format!("{:?}", i));
+                    }
                 }
                 write!(f, "{}", buff.join("\n"))
             }
@@ -52,6 +55,10 @@ pub struct QueryError(pub String);
 
 impl fmt::Display for QueryError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "An error occurred while processing the query: {}.", self.0)
+        write!(
+            f,
+            "An error occurred while processing the query: {}.",
+            self.0
+        )
     }
 }

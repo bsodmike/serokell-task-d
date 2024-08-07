@@ -1,2 +1,5 @@
 /target
 Cargo.lock
+/output_log.txt
+/tests/fixtures/sample.in_original
+/scratch.rs

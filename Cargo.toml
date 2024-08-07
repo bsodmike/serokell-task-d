@@ -11,6 +11,7 @@ predicates = "1"
 
 [dependencies]
 rand = "0.7"
+tokio = { version = "1.39.2", features = ["full"] }
 
 [dependencies.nom]
 version = "5"
