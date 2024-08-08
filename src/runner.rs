@@ -1,4 +1,6 @@
 use crate::*;
+use fst::automaton::Subsequence;
+use fst::{IntoStreamer, Set};
 use tokio::io::AsyncWriteExt;
 use tokio::{fs::OpenOptions, sync::Mutex};
 use util::{colored, YELLOW};
@@ -13,13 +15,21 @@ use std::{
 
 pub(crate) mod storage;
 
-static LAZY_TODOITEM_MAP: LazyLock<Mutex<Option<HashMap<Index, TodoItem>>>> =
+pub static LAZY_TODOITEM_MAP: LazyLock<Mutex<Option<HashMap<Index, TodoItem>>>> =
     LazyLock::new(|| Mutex::new(Some(HashMap::new())));
-static LAZY_WORD_MAP: LazyLock<Mutex<Option<HashMap<String, Vec<Index>>>>> =
+pub static LAZY_DESC_MAP: LazyLock<Mutex<Option<HashMap<String, Index>>>> =
     LazyLock::new(|| Mutex::new(Some(HashMap::new())));
-// FIXME: Optimize: Use char instead of string
-static LAZY_CHARACTER_MAP: LazyLock<Mutex<Option<HashMap<String, Vec<Index>>>>> =
-    LazyLock::new(|| Mutex::new(Some(HashMap::new())));
+pub static LAZY_SET: LazyLock<Mutex<Option<Set<Vec<u8>>>>> = LazyLock::new(|| {
+    Mutex::new(Some(
+        Set::from_iter(vec![""]).expect("Unable to create set"),
+    ))
+});
+
+// static LAZY_WORD_MAP: LazyLock<Mutex<Option<HashMap<String, Vec<Index>>>>> =
+//     LazyLock::new(|| Mutex::new(Some(HashMap::new())));
+// // FIXME: Optimize: Use char instead of string
+// static LAZY_CHARACTER_MAP: LazyLock<Mutex<Option<HashMap<String, Vec<Index>>>>> =
+//     LazyLock::new(|| Mutex::new(Some(HashMap::new())));
 
 #[derive(Debug)]
 pub struct Runner<R, W> {
@@ -73,30 +83,7 @@ pub(crate) async fn run_query<R, W>(
                 .map(|el| el.to_string())
                 .collect();
 
-            let (item, _) = tl.push(desc, tags);
-            {
-                let index_lock = &mut *LAZY_TODOITEM_MAP.lock().await;
-                if let Some(index_map) = index_lock {
-                    index_map.insert(item.index, item.clone());
-                    dbg!(index_map);
-                };
-
-                let index_lock = &mut *LAZY_WORD_MAP.lock().await;
-                if let Some(index_map) = index_lock {
-                    for word in words {
-                        let collection = if let Some(has_word) = index_map.get(&word) {
-                            let mut indices: Vec<Index> = has_word.to_vec().into_iter().collect();
-                            indices.push(item.index);
-                            indices
-                        } else {
-                            vec![item.index]
-                        };
-
-                        index_map.insert(word, collection);
-                    }
-                    dbg!(index_map);
-                }
-            }
+            let (item, _) = tl.push(desc, tags).await;
 
             let result = QueryResult::Added(item);
             Ok(result)
@@ -105,20 +92,32 @@ pub(crate) async fn run_query<R, W>(
         Query::Search(params) => {
             let tags = params.tags;
             let mut results: Vec<TodoItem> = vec![];
-            let mut have_results = true;
 
             dbg!(&tl);
 
-            for word in params.words {
-                let index_lock = &mut *LAZY_WORD_MAP.lock().await;
-                if let Some(index_map) = index_lock {
-                    if let Some(ids) = index_map.get(&word.0) {
-                        for id in ids {
-                            let index_lock = &mut *LAZY_TODOITEM_MAP.lock().await;
-                            if let Some(items) = index_lock {
-                                if let Some(item) = items.get(id) {
-                                    results.push(item.clone());
-                                    have_results = true;
+            let index_lock = &mut *LAZY_SET.lock().await;
+            if let Some(set) = index_lock {
+                for word in params.words {
+                    // Build fuzzy query.
+                    let subseq = Subsequence::new(word.0.as_str());
+                    // Apply fuzzy query to the set we built.
+                    let stream = set.search(subseq).into_stream();
+
+                    let keys = stream
+                        .into_strs()
+                        .expect("Unable to convert fst Stream into vector");
+
+                    dbg!(&keys);
+
+                    for key in keys {
+                        let index_lock = &mut *LAZY_DESC_MAP.lock().await;
+                        if let Some(hsh) = index_lock {
+                            if let Some(index) = hsh.get(&key) {
+                                let index_lock = &mut *LAZY_TODOITEM_MAP.lock().await;
+                                if let Some(items) = index_lock {
+                                    if let Some(item) = items.get(index) {
+                                        results.push(item.clone());
+                                    }
                                 }
                             }
                         }

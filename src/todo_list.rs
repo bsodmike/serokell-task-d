@@ -1,5 +1,8 @@
 use std::{fmt, ops::Add};
 
+use fst::Set;
+use runner::{LAZY_DESC_MAP, LAZY_SET, LAZY_TODOITEM_MAP};
+
 use crate::*;
 
 #[derive(Hash, Debug, Clone, Copy, PartialEq, Eq)]
@@ -114,7 +117,7 @@ impl TodoList {
         }
     }
 
-    pub fn push(&mut self, description: Description, tags: Vec<Tag>) -> (TodoItem, Index) {
+    pub async fn push(&mut self, description: Description, tags: Vec<Tag>) -> (TodoItem, Index) {
         let new_index = self.top_index + Index::new(1);
 
         let item = TodoItem::new(self.top_index, description, tags, false);
@@ -125,6 +128,30 @@ impl TodoList {
 
         // NOTE: Cloning
         items.push(item.clone());
+
+        {
+            let index_lock = &mut *LAZY_TODOITEM_MAP.lock().await;
+            if let Some(index_map) = index_lock {
+                index_map.insert(item.index, item.clone());
+                dbg!(index_map);
+            };
+
+            let index_lock = &mut *LAZY_DESC_MAP.lock().await;
+            if let Some(hsh) = index_lock {
+                hsh.insert(item.description.0.clone(), item.index);
+
+                let mut words = hsh.keys().into_iter().collect::<Vec<&String>>();
+                words.sort();
+
+                let index_lock = &mut *LAZY_SET.lock().await;
+                if let Some(index_map) = index_lock {
+                    let keys = words;
+                    let set: Set<Vec<u8>> = Set::from_iter(keys).expect("Unable to create Set");
+
+                    *index_map = set
+                }
+            };
+        }
 
         (item, new_index)
     }
