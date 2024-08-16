@@ -42,9 +42,11 @@ mod core {
     // `BTreeMap` or `HashMap` instead.
     //
     // However, an expensive approach is to pin the Set in memory, and on each evaluation, words are
-    // sorted and a new set is created and replaced, the nused for the subsequence search.
+    // sorted and a new set is created and replaced, then used for the subsequence search.
     #[test]
     fn using_fst_crate() {
+        unimplemented!();
+
         // A convenient way to create sets in memory.
         let keys = vec!["buy bread", "buy milk", "call parents"];
         let set: Set<Vec<u8>> = Set::from_iter(keys).expect("Unable to create Set");
