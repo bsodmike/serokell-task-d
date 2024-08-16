@@ -9,9 +9,11 @@ mod core {
     use std::io::prelude::*;
     use tokio::fs::File;
 
+    const OUTPUT_FILE: &str = "./tests/fixtures/sample.out";
+
     #[tokio::test]
     async fn process_fixture() {
-        File::create("./output_log.txt")
+        File::create(OUTPUT_FILE)
             .await
             .expect("Unable to open log output file");
 
@@ -22,7 +24,7 @@ mod core {
         let mut runner = Runner {
             reader: io::stdin().lock(),
             writer: io::stdout(),
-            log_path: Some(String::from("./output_log.txt")),
+            log_path: Some(String::from(OUTPUT_FILE)),
         };
 
         for (_, l) in text.lines().into_iter().enumerate() {
